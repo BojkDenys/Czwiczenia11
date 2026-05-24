@@ -28,8 +28,8 @@ public class DbService : IDbService
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(x =>
-                EF.Functions.Like(x.FirstName, $"%{search}$") ||
-                EF.Functions.Like(x.LastName, $"%{search}$"));
+                EF.Functions.Like(x.FirstName, $"%{search}%") ||
+                EF.Functions.Like(x.LastName, $"%{search}%"));
         }
 
         var patients = await query.ToListAsync();
@@ -39,7 +39,7 @@ public class DbService : IDbService
             FirstName = x.FirstName,
             LastName = x.LastName,
             Age = x.Age,
-            Sex = x.Sex,
+            Sex = x.Sex? "Male" : "Female",
             Admissions = x.Admissions.Select(a => new GetAdmissionsDto
             {
                 Id = a.Id,
