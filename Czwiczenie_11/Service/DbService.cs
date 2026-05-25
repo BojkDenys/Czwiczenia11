@@ -85,6 +85,48 @@ public class DbService : IDbService
 
     public async Task CreateBedAssignmentAsync(string pesel, CreateBedAssignmentDto createBedAssignment)
     {
-        throw new NotImplementedException();
+        var patient = await _context.Patients
+            .FirstOrDefaultAsync(x => x.Pesel == pesel);
+        if (patient == null)
+        {
+            throw new Exception("Patient not found");
+        }
+
+        var beds = await _context.Beds
+            .Include(x => x.BedType)
+            .Include(x => x.Room)
+            .ThenInclude(x => x.Ward)
+            .ToListAsync();
+        var matchingBeds = beds.Where(b =>
+            b.BedType.Name == createBedAssignment.BedType &&
+            b.Room.Ward.Name == createBedAssignment.Ward);
+        Bed? freeBed = null;
+        foreach (var bed in matchingBeds)
+        {
+            var notFree = await _context.BedAssignments.AnyAsync(x =>
+                x.BedId == bed.Id &&
+                createBedAssignment.From < x.To &&
+                (createBedAssignment.To ?? DateTime.MaxValue) > x.From);
+            if (!notFree)
+            {
+                freeBed = bed;
+                break;
+            }
+        }
+
+        if (freeBed == null)
+        {
+            throw new Exception("Not found free bed");
+        }
+
+        var assigment = new BedAssignment
+        {
+            PatientPesel = pesel,
+            BedId = freeBed.Id,
+            From = createBedAssignment.From,
+            To = createBedAssignment.To
+        };
+        _context.BedAssignments.Add(assigment);
+        await _context.SaveChangesAsync();
     }
 }

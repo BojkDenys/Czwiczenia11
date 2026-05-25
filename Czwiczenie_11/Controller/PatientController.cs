@@ -1,4 +1,5 @@
-﻿using Czwiczenie_11.Service;
+﻿using Czwiczenie_11.Dtos;
+using Czwiczenie_11.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Czwiczenie_11.Controller;
@@ -20,5 +21,20 @@ public class PatientController : ControllerBase
         var result = await _service.GetPatientsAsync(search);
         return Ok(result);
     }
+
+    [HttpPost("{pesel}/bedassignments")]
+    public async Task<IActionResult> CreateBedAssigment(string pesel, CreateBedAssignmentDto dto)
+    {
+        try
+        {
+            await _service.CreateBedAssignmentAsync(pesel, dto);
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+    
     
 }
